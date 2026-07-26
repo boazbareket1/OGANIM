@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>עוגנים • משחק המילים למשפטי המפתח שלך</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#181229;
+    --bg-2:#241a3d;
+    --bg-3:#2f2350;
+    --card:#2b2049;
+    --accent-gold:#e8b75e;
+    --accent-gold-soft:#f0cd8a;
+    --accent-sage:#86c0a4;
+    --accent-rose:#e38b93;
+    --text-light:#f5efe6;
+    --text-muted:#b3a8c9;
+    --tile-bg:#f5efe6;
+    --tile-text:#2b2049;
+    --tile-shadow: 0 3px 0 rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse 700px 500px at 20% -10%, #3a2a5c 0%, transparent 60%),
+      radial-gradient(ellipse 800px 600px at 100% 110%, #3a2456 0%, transparent 55%),
+      linear-gradient(180deg, var(--bg-1), var(--bg-2) 55%, var(--bg-1));
+    color:var(--text-light);
+    font-family:'Heebo', sans-serif;
+    padding:0;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:640px; margin:0 auto; padding:22px 18px 60px;}
+
+  /* ---------- Header ---------- */
+  .brand{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:22px;
+  }
+  .brand h1{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:1.5rem;
+    margin:0;
+    letter-spacing:.5px;
+    background:linear-gradient(90deg, var(--accent-gold-soft), var(--text-light));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .brand .subtitle{
+    font-size:.78rem; color:var(--text-muted); margin-top:2px;
+  }
+  .icon-btn{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12);
+    color:var(--text-light);
+    border-radius:12px;
+    padding:9px 14px;
+    font-family:'Heebo';
+    font-size:.85rem;
+    cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .icon-btn:active{transform:scale(.96);}
+  .icon-btn:hover{background:rgba(255,255,255,.11);}
+
+  /* ---------- Screens ---------- */
+  .screen{display:none;}
+  .screen.active{display:block; animation:fadeIn .35s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  /* ---------- Menu ---------- */
+  .intro-card{
+    background:linear-gradient(160deg, var(--card), var(--bg-3));
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:18px 20px;
+    margin-bottom:22px;
+    line-height:1.75;
+    font-size:.92rem;
+    color:var(--text-muted);
+  }
+  .intro-card b{color:var(--accent-gold-soft); font-weight:600;}
+
+  .section-label{
+    font-size:.78rem;
+    color:var(--accent-gold-soft);
+    letter-spacing:1px;
+    margin:26px 0 10px 2px;
+    font-weight:600;
+    text-transform:none;
+  }
+
+  .puzzle-list{display:flex; flex-direction:column; gap:10px;}
+  .puzzle-card{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:14px;
+    padding:14px 16px;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  .puzzle-card:hover{background:rgba(255,255,255,.075); border-color:rgba(232,183,94,.35);}
+  .puzzle-card:active{transform:scale(.985);}
+  .puzzle-card .txt{
+    font-family:'Frank Ruhl Libre', serif;
+    font-size:1.02rem;
+    line-height:1.5;
+  }
+  .puzzle-card .meta{font-size:.72rem; color:var(--text-muted); margin-top:3px;}
+  .puzzle-card .go{color:var(--accent-gold); font-size:1.1rem; flex:none;}
+  .puzzle-card .del{
+    background:none; border:none; color:var(--text-muted); font-size:1.1rem;
+    cursor:pointer; padding:4px 6px; flex:none; line-height:1;
+  }
+  .puzzle-card .del:hover{color:var(--accent-rose);}
+  .empty-note{color:var(--text-muted); font-size:.85rem; padding:6px 4px;}
+
+  /* add sentence form */
+  .add-card{
+    background:linear-gradient(160deg, var(--card), var(--bg-3));
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:18px;
+    margin-top:8px;
+  }
+  .add-card textarea{
+    width:100%;
+    background:rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:12px;
+    color:var(--text-light);
+    font-family:'Frank Ruhl Libre', serif;
+    font-size:1.05rem;
+    padding:12px 14px;
+    resize:none;
+    min-height:60px;
+    line-height:1.6;
+  }
+  .add-card textarea:focus{outline:none; border-color:var(--accent-gold);}
+  .add-card .row{display:flex; gap:10px; margin-top:12px; align-items:center; flex-wrap:wrap;}
+  .primary-btn{
+    background:linear-gradient(135deg, var(--accent-gold), #d69f42);
+    color:#2b1d05;
+    border:none;
+    border-radius:12px;
+    padding:11px 20px;
+    font-family:'Heebo'; font-weight:600; font-size:.9rem;
+    cursor:pointer;
+    transition:filter .15s ease, transform .1s ease;
+  }
+  .primary-btn:hover{filter:brightness(1.07);}
+  .primary-btn:active{transform:scale(.97);}
+  .form-error{color:var(--accent-rose); font-size:.8rem; margin-top:8px; min-height:1em;}
+  .share-box{
+    margin-top:14px; padding:12px 14px;
+    background:rgba(134,192,164,.1);
+    border:1px solid rgba(134,192,164,.35);
+    border-radius:12px;
+    display:none;
+  }
+  .share-box.show{display:block; animation:fadeIn .3s ease;}
+  .share-box .lbl{font-size:.78rem; color:var(--accent-sage); margin-bottom:6px;}
+  .share-box .link-row{display:flex; gap:8px;}
+  .share-box input{
+    flex:1; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.15);
+    border-radius:8px; color:var(--text-light); padding:8px 10px; font-size:.78rem;
+    font-family:monospace; direction:ltr; text-align:left;
+  }
+
+  /* ---------- Game screen ---------- */
+  .game-header{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; gap:8px;
+  }
+  .game-toolbar{display:flex; gap:8px;}
+
+  .board{
+    display:flex; flex-wrap:wrap;
+    gap:18px 22px;
+    justify-content:center;
+    padding:22px 10px 30px;
+    min-height:90px;
+  }
+  .word-group{display:flex; gap:6px;}
+  .box{
+    width:38px; height:44px;
+    border-radius:9px;
+    background:rgba(255,255,255,.05);
+    border:2px solid rgba(255,255,255,.18);
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .box.correct{
+    border-color:var(--accent-sage);
+    background:rgba(134,192,164,.14);
+  }
+  .box.mismatch{
+    border-color:var(--accent-rose);
+    background:rgba(227,139,147,.12);
+    animation:shake .3s ease;
+  }
+  .box.hinted{border-color:var(--accent-gold);}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-3px);}
+    75%{transform:translateX(3px);}
+  }
+  .box .tile{position:static;}
+
+  .bank-wrap{
+    position:relative;
+    border-radius:22px;
+    padding:26px 16px 20px;
+    background:radial-gradient(ellipse 260px 140px at 50% 0%, rgba(232,183,94,.14), transparent 70%), rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .bank{
+    display:flex; flex-wrap:wrap; gap:9px; justify-content:center;
+    min-height:52px;
+  }
+
+  .tile{
+    width:40px; height:46px;
+    background:var(--tile-bg);
+    color:var(--tile-text);
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:1.22rem;
+    cursor:grab;
+    box-shadow:var(--tile-shadow);
+    user-select:none;
+    touch-action:none;
+    transition:box-shadow .15s ease, transform .12s ease;
+    animation:rise .35s ease backwards;
+  }
+  @keyframes rise{
+    from{opacity:0; transform:translateY(10px) scale(.85);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  .tile.selected{
+    box-shadow:0 0 0 3px var(--accent-gold), var(--tile-shadow);
+    transform:translateY(-3px);
+  }
+  .tile.dragging{
+    position:fixed; z-index:999; cursor:grabbing;
+    box-shadow:0 10px 22px rgba(0,0,0,.4);
+    transform:scale(1.08) rotate(-2deg);
+  }
+  .tile.placed-pulse{animation:pulse .45s ease;}
+  @keyframes pulse{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.18); box-shadow:0 0 0 6px rgba(134,192,164,.35);}
+    100%{transform:scale(1);}
+  }
+  .box.locked .tile{cursor:default;}
+
+  .hint-counter{font-size:.72rem; color:var(--text-muted); text-align:center; margin-top:14px;}
+
+  .win-banner{
+    display:none;
+    text-align:center;
+    margin-top:24px;
+    padding:20px;
+    border-radius:16px;
+    background:linear-gradient(160deg, rgba(134,192,164,.18), rgba(134,192,164,.05));
+    border:1px solid rgba(134,192,164,.4);
+    animation:fadeIn .5s ease;
+  }
+  .win-banner.show{display:block;}
+  .win-banner .big{font-family:'Frank Ruhl Libre', serif; font-size:1.15rem; color:var(--accent-sage); margin-bottom:6px;}
+  .win-banner .small{font-size:.8rem; color:var(--text-muted); margin-bottom:14px;}
+  .win-banner .actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+
+  .ghost-btn{
+    background:transparent;
+    border:1px solid rgba(255,255,255,.22);
+    color:var(--text-light);
+    border-radius:12px;
+    padding:10px 16px;
+    font-family:'Heebo'; font-size:.85rem;
+    cursor:pointer;
+  }
+  .ghost-btn:hover{border-color:var(--accent-gold);}
+
+  footer.credit{
+    text-align:center; color:var(--text-muted); font-size:.72rem; margin-top:40px; opacity:.6;
+  }
+
+  .local-warning{
+    background:rgba(227,139,147,.12);
+    border:1px solid rgba(227,139,147,.4);
+    color:var(--text-light);
+    border-radius:14px;
+    padding:13px 16px;
+    font-size:.8rem;
+    line-height:1.7;
+    margin-bottom:18px;
+  }
+  .local-warning b{color:var(--accent-rose);}
+
+  .board.solved{ animation: boardGlow 1.1s ease; }
+  @keyframes boardGlow{
+    0%{filter:none;}
+    40%{filter:drop-shadow(0 0 16px rgba(232,183,94,.6));}
+    100%{filter:none;}
+  }
+
+  .solved-toast{
+    position:fixed; top:16px; left:50%;
+    transform:translateX(-50%) translateY(-24px);
+    background:linear-gradient(135deg, var(--accent-gold), #d69f42);
+    color:#2b1d05; font-weight:700; font-family:'Heebo';
+    padding:11px 24px; border-radius:999px;
+    box-shadow:0 8px 20px rgba(0,0,0,.4);
+    z-index:1000; opacity:0; pointer-events:none;
+    transition:opacity .35s ease, transform .35s ease;
+    font-size:.92rem; white-space:nowrap;
+  }
+  .solved-toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="brand">
+    <div>
+      <h1>עוגנים</h1>
+      <div class="subtitle">משחק המילים למשפטי המפתח שלך</div>
+    </div>
+    <button class="icon-btn" id="btn-back" onclick="goMenu()" style="display:none;">‹ תפריט</button>
+  </div>
+
+  <!-- ============ MENU SCREEN ============ -->
+  <div class="screen active" id="screen-menu">
+
+    <div class="intro-card">
+      כל חידה היא <b>משפט מפתח</b> שמתפרק לאותיות. גררו או הקישו על האותיות כדי להחזיר את המשפט למקומו —
+      ובכל פעם שתרצו רמז, אות נוספת "תיפול" בעצמה למקומה הנכון.
+    </div>
+
+    <div class="local-warning" id="local-warning" style="display:none;">
+      ⚠️ <b>הקובץ נפתח כרגע ישירות מהמחשב</b> (כתובת שמתחילה ב-file://), ולכן קישורי שיתוף שנוצרים כאן יעבדו רק אצלך, בדפדפן הזה, ולא אצל אף אחד אחר.
+      ברגע שתעלו את הקובץ ל-GitHub Pages ותשתמשו בו מהכתובת החיה (https://...), אותם הקישורים בדיוק יעבדו לכל מי שיפתח אותם.
+    </div>
+
+    <div id="shared-puzzle-slot"></div>
+
+    <div class="section-label">חידות</div>
+    <div class="puzzle-list" id="list-default"></div>
+
+    <div class="section-label" id="label-custom" style="display:none;">החידות שיצרתי</div>
+    <div class="puzzle-list" id="list-custom"></div>
+
+    <div class="section-label">יצירת חידה חדשה</div>
+    <div class="add-card">
+      <textarea id="new-sentence" placeholder="כתבו כאן משפט מפתח בעברית..." maxlength="120"></textarea>
+      <div class="row">
+        <button class="primary-btn" onclick="createCustomPuzzle()">צור/י חידה ושתפ/י</button>
+      </div>
+      <div class="form-error" id="add-error"></div>
+      <div class="share-box" id="share-box">
+        <div class="lbl">✓ החידה נוצרה. שלחו את הקישור הזה כדי שאחרים ישחקו בדיוק במשפט שלכם:</div>
+        <div class="link-row">
+          <input type="text" id="share-link" readonly>
+          <button class="ghost-btn" onclick="copyShareLink()">העתק/י</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="credit">בועז ברקת · כלי לעיבוד רגשי</footer>
+  </div>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <div class="screen" id="screen-game">
+    <div class="game-header">
+      <div class="game-toolbar">
+        <button class="icon-btn" onclick="giveHint()">💡 רמז</button>
+        <button class="icon-btn" onclick="resetBoard()">↺ איפוס</button>
+      </div>
+      <button class="icon-btn" onclick="shareCurrentPuzzle()">שיתוף ↗</button>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="bank-wrap">
+      <div class="bank" id="bank"></div>
+    </div>
+    <div class="hint-counter" id="hint-counter"></div>
+
+    <div class="win-banner" id="win-banner">
+      <div class="big">המשפט הושלם ✨</div>
+      <div class="small" id="win-sentence"></div>
+      <div class="actions">
+        <button class="ghost-btn" onclick="resetBoard()">שחק/י שוב</button>
+        <button class="primary-btn" onclick="goMenu()">חידה נוספת</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ================= DATA ================= */
+const DEFAULT_PUZZLES = [
+  "דבר לא בא על חשבון דבר",
+  "הנני מעניק משמעות לכל מקום בו אחלוף",
+  "כולנו מאותו מקור",
+  "אני שלם עם עצמי כפי שאני",
+  "הכל קורה בזמן הנכון",
+  "השקט הפנימי הוא הבית שלי",
+  "כל רגש מגיע ללמד אותי משהו",
+  "אני ראוי לאהבה כפי שאני",
+  "הנשימה שלי מחזירה אותי הביתה",
+  "אני מרשה לעצמי לנוח"
+];
+
+const LETTER_POOL = ["א","ב","ג","ד","ה","ו","ז","ח","ט","י","כ","ל","מ","נ","ס","ע","פ","צ","ק","ר","ש","ת"];
+
+const CUSTOM_KEY = "wordGameCustomPuzzles";
+const IS_LOCAL_FILE = location.protocol === 'file:';
+
+/* ================= UTIL ================= */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function b64EncodeUnicode(str){
+  const bytes = encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m,p1)=>String.fromCharCode('0x'+p1));
+  return encodeURIComponent(btoa(bytes));
+}
+function b64DecodeUnicode(enc){
+  const b64 = decodeURIComponent(enc);
+  const bytes = atob(b64);
+  return decodeURIComponent(bytes.split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+}
+
+function getCustomPuzzles(){
+  try{ return JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]"); }
+  catch(e){ return []; }
+}
+function saveCustomPuzzles(list){
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(list));
+}
+
+function sanitizeSentence(raw){
+  let s = raw.trim().replace(/\s+/g," ");
+  return s;
+}
+function isValidSentence(s){
+  if(s.length < 3 || s.length > 100) return false;
+  return /^[\u05D0-\u05EA'"\s]+$/.test(s);
+}
+
+/* ================= MENU ================= */
+function renderMenu(){
+  const dl = document.getElementById('list-default');
+  dl.innerHTML = "";
+  DEFAULT_PUZZLES.forEach(s=>dl.appendChild(puzzleCard(s, false)));
+
+  const custom = getCustomPuzzles();
+  const cl = document.getElementById('list-custom');
+  const cLabel = document.getElementById('label-custom');
+  cl.innerHTML = "";
+  if(custom.length){
+    cLabel.style.display = "block";
+    custom.forEach(s=>cl.appendChild(puzzleCard(s, true)));
+  } else {
+    cLabel.style.display = "none";
+  }
+}
+
+function puzzleCard(sentence, deletable){
+  const el = document.createElement('div');
+  el.className = "puzzle-card";
+  const wordCount = sentence.split(" ").length;
+  el.innerHTML = `
+    <div class="txt">
+      ${sentence.split(" ").map(w=>"▢".repeat(w.length)).join(" ")}
+      <div class="meta">${wordCount} מילים</div>
+    </div>
+    <span class="go">▶</span>
+  `;
+  el.addEventListener('click', (e)=>{ startGame(sentence); });
+  if(deletable){
+    const del = document.createElement('button');
+    del.className = "del";
+    del.textContent = "✕";
+    del.onclick = (e)=>{
+      e.stopPropagation();
+      let list = getCustomPuzzles().filter(s=>s!==sentence);
+      saveCustomPuzzles(list);
+      renderMenu();
+    };
+    el.insertBefore(del, el.firstChild);
+  }
+  return el;
+}
+
+function createCustomPuzzle(){
+  const ta = document.getElementById('new-sentence');
+  const err = document.getElementById('add-error');
+  const box = document.getElementById('share-box');
+  const s = sanitizeSentence(ta.value);
+  err.textContent = "";
+  box.classList.remove('show');
+
+  if(!isValidSentence(s)){
+    err.textContent = "אפשר להשתמש רק באותיות בעברית ורווחים בין מילים (3–100 תווים).";
+    return;
+  }
+  let list = getCustomPuzzles();
+  if(!list.includes(s)) list.unshift(s);
+  saveCustomPuzzles(list);
+  renderMenu();
+
+  const link = location.origin + location.pathname + "#p=" + b64EncodeUnicode(s);
+  document.getElementById('share-link').value = link;
+  box.classList.add('show');
+  const lbl = box.querySelector('.lbl');
+  lbl.textContent = IS_LOCAL_FILE
+    ? "✓ החידה נוצרה. שימו לב: הקישור הזה יעבוד רק אצלכם כרגע (הקובץ נפתח מהמחשב) — לאחר שתעלו ל-GitHub Pages, אותו קישור בדיוק ישלח כל אחד ישר לחידה הזו:"
+    : "✓ החידה נוצרה. שלחו את הקישור הזה כדי שאחרים ישחקו בדיוק במשפט שלכם:";
+  ta.value = "";
+}
+
+function copyShareLink(){
+  const input = document.getElementById('share-link');
+  input.select();
+  input.setSelectionRange(0, 99999);
+  navigator.clipboard?.writeText(input.value).catch(()=>{ document.execCommand('copy'); });
+}
+
+function goMenu(){
+  document.getElementById('screen-menu').classList.add('active');
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('btn-back').style.display = "none";
+  history.replaceState(null, "", location.pathname);
+  renderMenu();
+}
+
+/* ================= GAME STATE ================= */
+let currentSentence = "";
+let hintsUsed = 0;
+let dragCtx = null;
+let selectedTile = null;
+
+function startGame(sentence){
+  currentSentence = sentence;
+  hintsUsed = 0;
+  selectedTile = null;
+  buildBoard(sentence);
+  document.getElementById('screen-menu').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+  document.getElementById('btn-back').style.display = "inline-block";
+  document.getElementById('win-banner').classList.remove('show');
+  updateHintCounter();
+  window.scrollTo(0,0);
+}
+
+function resetBoard(){
+  startGame(currentSentence);
+}
+
+function shareCurrentPuzzle(){
+  const link = location.origin + location.pathname + "#p=" + b64EncodeUnicode(currentSentence);
+  navigator.clipboard?.writeText(link).then(()=>{
+    flashToolbarMsg(IS_LOCAL_FILE ? "הועתק (יעבוד רק אחרי העלאה ל-GitHub Pages)" : "קישור הועתק ✓");
+  }).catch(()=>{
+    prompt(IS_LOCAL_FILE ? "קישור זה יעבוד רק אחרי העלאה ל-GitHub Pages:" : "העתיקו את הקישור:", link);
+  });
+}
+function flashToolbarMsg(msg){
+  const b = document.querySelector('.game-toolbar');
+  const tip = document.createElement('span');
+  tip.textContent = msg;
+  tip.style.cssText = "font-size:.78rem;color:var(--accent-sage);align-self:center;margin-inline-start:6px;";
+  b.appendChild(tip);
+  setTimeout(()=>tip.remove(), 1600);
+}
+
+function buildBoard(sentence){
+  const board = document.getElementById('board');
+  const bank = document.getElementById('bank');
+  board.innerHTML = "";
+  bank.innerHTML = "";
+
+  const words = sentence.split(" ");
+  const neededChars = [];
+
+  words.forEach(word=>{
+    const group = document.createElement('div');
+    group.className = "word-group";
+    [...word].forEach(ch=>{
+      const box = document.createElement('div');
+      box.className = "box";
+      box.dataset.char = ch;
+      attachBoxHandlers(box);
+      group.appendChild(box);
+      neededChars.push(ch);
+    });
+    board.appendChild(group);
+  });
+
+  // distractor letters: pool letters not already required by the sentence
+  const uniqueNeeded = new Set(neededChars);
+  const distractorPool = LETTER_POOL.filter(l=>!uniqueNeeded.has(l));
+  const distractorCount = Math.max(3, Math.round(neededChars.length * 0.35));
+  const distractors = shuffle(distractorPool).slice(0, Math.min(distractorCount, distractorPool.length));
+
+  const allTiles = shuffle([...neededChars, ...distractors]);
+  allTiles.forEach((ch, i)=>{
+    const tile = makeTile(ch);
+    tile.style.animationDelay = (i*0.02)+"s";
+    bank.appendChild(tile);
+  });
+}
+
+function makeTile(ch){
+  const tile = document.createElement('div');
+  tile.className = "tile";
+  tile.textContent = ch;
+  tile.dataset.char = ch;
+  attachTileHandlers(tile);
+  return tile;
+}
+
+/* ---------- interaction: pointer-based drag + tap-to-place ---------- */
+function attachTileHandlers(tile){
+  tile.addEventListener('pointerdown', (e)=>{
+    if(tile.closest('.box.locked')) return;
+    e.preventDefault();
+    const rect = tile.getBoundingClientRect();
+    dragCtx = {
+      tile,
+      startX: e.clientX, startY: e.clientY,
+      offX: e.clientX - rect.left, offY: e.clientY - rect.top,
+      moved:false,
+      originParent: tile.parentElement,
+      originNext: tile.nextSibling
+    };
+    tile.setPointerCapture(e.pointerId);
+    document.addEventListener('pointermove', onTileMove);
+    document.addEventListener('pointerup', onTileUp);
+  });
+}
+
+function onTileMove(e){
+  if(!dragCtx) return;
+  const dx = e.clientX - dragCtx.startX;
+  const dy = e.clientY - dragCtx.startY;
+  if(Math.abs(dx) > 5 || Math.abs(dy) > 5){
+    if(!dragCtx.moved){
+      dragCtx.moved = true;
+      dragCtx.tile.classList.add('dragging');
+      const rect = dragCtx.tile.getBoundingClientRect();
+      dragCtx.tile.style.width = rect.width+"px";
+      dragCtx.tile.style.height = rect.height+"px";
+      document.body.appendChild(dragCtx.tile);
+    }
+    dragCtx.tile.style.left = (e.clientX - dragCtx.offX)+"px";
+    dragCtx.tile.style.top = (e.clientY - dragCtx.offY)+"px";
+  }
+}
+
+function onTileUp(e){
+  document.removeEventListener('pointermove', onTileMove);
+  document.removeEventListener('pointerup', onTileUp);
+  if(!dragCtx) return;
+  const { tile, moved, originParent, originNext } = dragCtx;
+
+  if(moved){
+    tile.classList.remove('dragging');
+    tile.style.position = ""; tile.style.left=""; tile.style.top="";
+    tile.style.width=""; tile.style.height="";
+    const dropEl = document.elementFromPoint(e.clientX, e.clientY);
+    const box = dropEl ? dropEl.closest('.box') : null;
+    if(box && !box.querySelector('.tile')){
+      placeTile(tile, box);
+    } else {
+      // snap back
+      if(originNext) originParent.insertBefore(tile, originNext);
+      else originParent.appendChild(tile);
+    }
+  } else {
+    // tap: toggle selection
+    if(selectedTile === tile){
+      tile.classList.remove('selected');
+      selectedTile = null;
+    } else {
+      if(selectedTile) selectedTile.classList.remove('selected');
+      tile.classList.add('selected');
+      selectedTile = tile;
+    }
+  }
+  dragCtx = null;
+}
+
+function attachBoxHandlers(box){
+  box.addEventListener('pointerdown', (e)=>{
+    // ignore if event actually started on a tile inside (tile handler manages that)
+    if(e.target.classList.contains('tile')) return;
+    if(box.classList.contains('locked')) return;
+
+    const existing = box.querySelector('.tile');
+    if(existing){
+      // remove tile back to bank
+      document.getElementById('bank').appendChild(existing);
+      updateBoxStates();
+      return;
+    }
+    if(selectedTile){
+      placeTile(selectedTile, box);
+      selectedTile = null;
+    }
+  });
+}
+
+function placeTile(tile, box){
+  tile.classList.remove('selected','dragging');
+  tile.style.position=""; tile.style.left=""; tile.style.top="";
+  box.appendChild(tile);
+  tile.classList.add('placed-pulse');
+  setTimeout(()=>tile.classList.remove('placed-pulse'), 450);
+  updateBoxStates();
+}
+
+function updateBoxStates(){
+  const boxes = [...document.querySelectorAll('.box')];
+  let filledCorrect = 0;
+  boxes.forEach(box=>{
+    const t = box.querySelector('.tile');
+    box.classList.remove('correct','mismatch');
+    if(t){
+      if(t.dataset.char === box.dataset.char){
+        box.classList.add('correct');
+        filledCorrect++;
+      } else {
+        box.classList.add('mismatch');
+      }
+    }
+  });
+  if(filledCorrect === boxes.length){
+    onWin();
+  }
+}
+
+function onWin(){
+  document.getElementById('win-sentence').textContent = currentSentence;
+  const banner = document.getElementById('win-banner');
+  banner.classList.add('show');
+
+  const board = document.getElementById('board');
+  board.classList.remove('solved');
+  void board.offsetWidth; // restart animation if triggered again
+  board.classList.add('solved');
+
+  showSolvedToast();
+  banner.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function showSolvedToast(){
+  let toast = document.getElementById('solved-toast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'solved-toast';
+    toast.className = 'solved-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = '🎉 בדיוק! הגעת למשפט הנכון';
+  toast.classList.remove('show');
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(()=>toast.classList.remove('show'), 2400);
+}
+
+/* ---------- hint ---------- */
+function findTileForChar(ch, excludeBox){
+  const bankTile = [...document.getElementById('bank').children].find(t=>t.dataset.char===ch);
+  if(bankTile) return bankTile;
+  // reclaim a misplaced tile of this char sitting in the wrong box
+  const misplaced = [...document.querySelectorAll('.box')].find(b=>{
+    if(b === excludeBox) return false;
+    const t = b.querySelector('.tile');
+    return t && t.dataset.char === ch && b.dataset.char !== ch;
+  });
+  if(misplaced) return misplaced.querySelector('.tile');
+  return null;
+}
+
+function giveHint(){
+  const boxes = [...document.querySelectorAll('.box')];
+  const target = boxes.find(b=>{
+    const t = b.querySelector('.tile');
+    return !t || t.dataset.char !== b.dataset.char;
+  });
+  if(!target) return;
+
+  const wrongTile = target.querySelector('.tile');
+  if(wrongTile){
+    document.getElementById('bank').appendChild(wrongTile);
+  }
+  const tile = findTileForChar(target.dataset.char, target);
+  if(!tile) return;
+
+  placeTile(tile, target);
+  target.classList.add('hinted','locked');
+  hintsUsed++;
+  updateHintCounter();
+}
+
+function updateHintCounter(){
+  const el = document.getElementById('hint-counter');
+  el.textContent = hintsUsed>0 ? `רמזים בשימוש: ${hintsUsed}` : "";
+}
+
+/* ================= INIT / ROUTING ================= */
+function checkHashForSharedPuzzle(){
+  const hash = location.hash;
+  if(hash.startsWith('#p=')){
+    try{
+      const s = b64DecodeUnicode(hash.slice(3));
+      if(isValidSentence(s)){
+        startGame(s);
+        return true;
+      }
+    }catch(e){ /* fall through to menu */ }
+  }
+  return false;
+}
+
+if(IS_LOCAL_FILE){
+  document.getElementById('local-warning').style.display = "block";
+}
+
+renderMenu();
+if(!checkHashForSharedPuzzle()){
+  goMenu();
+}
+</script>
+
+</body>
+</html>
