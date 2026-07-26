@@ -207,6 +207,20 @@
     animation:shake .3s ease;
   }
   .box.hinted{border-color:var(--accent-gold);}
+  .box.correct::after, .box.mismatch::after{
+    position:absolute; top:-9px; left:-7px;
+    width:17px; height:17px; border-radius:50%;
+    font-size:11px; font-weight:700; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .box.correct::after{content:"✓"; background:var(--accent-sage); color:#123023;}
+  .box.mismatch::after{content:"✕"; background:var(--accent-rose); color:#3a1216;}
+
+  .progress-status{
+    text-align:center; font-size:.8rem; color:var(--text-muted);
+    margin:2px 0 4px;
+  }
+  .progress-status b{color:var(--accent-gold-soft);}
   @keyframes shake{
     0%,100%{transform:translateX(0);}
     25%{transform:translateX(-3px);}
@@ -279,6 +293,21 @@
   .win-banner .big{font-family:'Frank Ruhl Libre', serif; font-size:1.15rem; color:var(--accent-sage); margin-bottom:6px;}
   .win-banner .small{font-size:.8rem; color:var(--text-muted); margin-bottom:14px;}
   .win-banner .actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+  .win-banner .reflect{
+    display:none;
+    margin:16px auto 18px;
+    max-width:460px;
+    padding:14px 18px;
+    border-radius:14px;
+    background:rgba(232,183,94,.1);
+    border:1px solid rgba(232,183,94,.3);
+    text-align:right;
+  }
+  .win-banner .reflect.show{display:block;}
+  .win-banner .reflect .reflect-lbl{font-size:.72rem; color:var(--accent-gold-soft); margin-bottom:5px;}
+  .win-banner .reflect .reflect-q{font-family:'Frank Ruhl Libre', serif; font-size:1rem; line-height:1.6; color:var(--text-light);}
+
+  .puzzle-card .q-badge{color:var(--accent-gold-soft); font-size:.72rem; margin-inline-start:4px;}
 
   .ghost-btn{
     background:transparent;
@@ -364,6 +393,7 @@
     <div class="section-label">יצירת חידה חדשה</div>
     <div class="add-card">
       <textarea id="new-sentence" placeholder="כתבו כאן משפט מפתח בעברית..." maxlength="120"></textarea>
+      <textarea id="new-question" placeholder="שאלה למחשבה (רשות) — תוצג אחרי שהמשפט נפתר" maxlength="200" style="min-height:44px; margin-top:8px; font-family:'Heebo'; font-size:.85rem;"></textarea>
       <div class="row">
         <button class="primary-btn" onclick="createCustomPuzzle()">צור/י חידה ושתפ/י</button>
       </div>
@@ -391,6 +421,7 @@
     </div>
 
     <div class="board" id="board"></div>
+    <div class="progress-status" id="progress-status"></div>
 
     <div class="bank-wrap">
       <div class="bank" id="bank"></div>
@@ -400,6 +431,10 @@
     <div class="win-banner" id="win-banner">
       <div class="big">המשפט הושלם ✨</div>
       <div class="small" id="win-sentence"></div>
+      <div class="reflect" id="win-reflect">
+        <div class="reflect-lbl">💭 שאלה למחשבה</div>
+        <div class="reflect-q" id="win-reflect-q"></div>
+      </div>
       <div class="actions">
         <button class="ghost-btn" onclick="resetBoard()">שחק/י שוב</button>
         <button class="primary-btn" onclick="goMenu()">חידה נוספת</button>
@@ -412,16 +447,16 @@
 <script>
 /* ================= DATA ================= */
 const DEFAULT_PUZZLES = [
-  "דבר לא בא על חשבון דבר",
-  "הנני מעניק משמעות לכל מקום בו אחלוף",
-  "כולנו מאותו מקור",
-  "אני שלם עם עצמי כפי שאני",
-  "הכל קורה בזמן הנכון",
-  "השקט הפנימי הוא הבית שלי",
-  "כל רגש מגיע ללמד אותי משהו",
-  "אני ראוי לאהבה כפי שאני",
-  "הנשימה שלי מחזירה אותי הביתה",
-  "אני מרשה לעצמי לנוח"
+  { text:"דבר לא בא על חשבון דבר", question:"איפה בחיים שלך מרגיש כרגע שמשהו אחד עולה לך במחיר של דבר אחר?" },
+  { text:"הנני מעניק משמעות לכל מקום בו אחלוף", question:"אילו מקומות או רגעים עברת דרכם בלי לתת להם משמעות?" },
+  { text:"כולנו מאותו מקור", question:"איך היית מתייחס/ת לאדם שמעצבן אותך, אילו זכרת שאתם מאותו מקור?" },
+  { text:"אני שלם עם עצמי כפי שאני", question:"מהו החלק בעצמך שהכי קשה לך לקבל כפי שהוא?" },
+  { text:"הכל קורה בזמן הנכון", question:"איזה עיכוב או המתנה בחייך אתה נאבק לקבל?" },
+  { text:"השקט הפנימי הוא הבית שלי", question:"מתי בפעם האחרונה הרגשת בבית בתוך עצמך?" },
+  { text:"כל רגש מגיע ללמד אותי משהו", question:"מאיזה רגש אתה הכי ממהר לברוח, ומה הוא אולי מנסה ללמד אותך?" },
+  { text:"אני ראוי לאהבה כפי שאני", question:"מה היית צריך להוכיח כדי להאמין שמגיע לך אהבה?" },
+  { text:"הנשימה שלי מחזירה אותי הביתה", question:"כמה זמן עובר בדרך כלל עד שאתה שם לב שהפסקת לנשום עמוק?" },
+  { text:"אני מרשה לעצמי לנוח", question:"מה קורה בך כשאתה מנסה לעצור ולנוח באמת?" }
 ];
 
 const LETTER_POOL = ["א","ב","ג","ד","ה","ו","ז","ח","ט","י","כ","ל","מ","נ","ס","ע","פ","צ","ק","ר","ש","ת"];
@@ -449,8 +484,28 @@ function b64DecodeUnicode(enc){
   return decodeURIComponent(bytes.split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
 }
 
+function encodePayload(text, question){
+  const obj = { s: text };
+  if(question) obj.q = question;
+  return b64EncodeUnicode(JSON.stringify(obj));
+}
+function decodePayload(enc){
+  const raw = b64DecodeUnicode(enc);
+  try{
+    const obj = JSON.parse(raw);
+    if(obj && typeof obj.s === 'string'){
+      return { text: obj.s, question: obj.q || "" };
+    }
+  }catch(e){ /* not JSON: fall back to legacy plain-text link */ }
+  return { text: raw, question: "" };
+}
+
 function getCustomPuzzles(){
-  try{ return JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]"); }
+  try{
+    const raw = JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]");
+    // migrate legacy format where entries were plain strings
+    return raw.map(item => typeof item === 'string' ? { text:item, question:"" } : item);
+  }
   catch(e){ return []; }
 }
 function saveCustomPuzzles(list){
@@ -461,6 +516,9 @@ function sanitizeSentence(raw){
   let s = raw.trim().replace(/\s+/g," ");
   return s;
 }
+function sanitizeQuestion(raw){
+  return raw.trim().replace(/\s+/g," ").slice(0,200);
+}
 function isValidSentence(s){
   if(s.length < 3 || s.length > 100) return false;
   return /^[\u05D0-\u05EA'"\s]+$/.test(s);
@@ -470,7 +528,7 @@ function isValidSentence(s){
 function renderMenu(){
   const dl = document.getElementById('list-default');
   dl.innerHTML = "";
-  DEFAULT_PUZZLES.forEach(s=>dl.appendChild(puzzleCard(s, false)));
+  DEFAULT_PUZZLES.forEach(p=>dl.appendChild(puzzleCard(p, false)));
 
   const custom = getCustomPuzzles();
   const cl = document.getElementById('list-custom');
@@ -478,31 +536,32 @@ function renderMenu(){
   cl.innerHTML = "";
   if(custom.length){
     cLabel.style.display = "block";
-    custom.forEach(s=>cl.appendChild(puzzleCard(s, true)));
+    custom.forEach(p=>cl.appendChild(puzzleCard(p, true)));
   } else {
     cLabel.style.display = "none";
   }
 }
 
-function puzzleCard(sentence, deletable){
+function puzzleCard(puzzle, deletable){
   const el = document.createElement('div');
   el.className = "puzzle-card";
-  const wordCount = sentence.split(" ").length;
+  const words = puzzle.text.split(" ");
+  const wordCount = words.length;
   el.innerHTML = `
     <div class="txt">
-      ${sentence.split(" ").map(w=>"▢".repeat(w.length)).join(" ")}
-      <div class="meta">${wordCount} מילים</div>
+      ${words.map(w=>"▢".repeat(w.length)).join(" ")}
+      <div class="meta">${wordCount} מילים${puzzle.question ? ' <span class="q-badge">· 💭 כולל שאלה למחשבה</span>' : ''}</div>
     </div>
     <span class="go">▶</span>
   `;
-  el.addEventListener('click', (e)=>{ startGame(sentence); });
+  el.addEventListener('click', (e)=>{ startGame(puzzle); });
   if(deletable){
     const del = document.createElement('button');
     del.className = "del";
     del.textContent = "✕";
     del.onclick = (e)=>{
       e.stopPropagation();
-      let list = getCustomPuzzles().filter(s=>s!==sentence);
+      let list = getCustomPuzzles().filter(p=>p.text!==puzzle.text);
       saveCustomPuzzles(list);
       renderMenu();
     };
@@ -513,9 +572,11 @@ function puzzleCard(sentence, deletable){
 
 function createCustomPuzzle(){
   const ta = document.getElementById('new-sentence');
+  const qa = document.getElementById('new-question');
   const err = document.getElementById('add-error');
   const box = document.getElementById('share-box');
   const s = sanitizeSentence(ta.value);
+  const q = sanitizeQuestion(qa.value);
   err.textContent = "";
   box.classList.remove('show');
 
@@ -524,11 +585,11 @@ function createCustomPuzzle(){
     return;
   }
   let list = getCustomPuzzles();
-  if(!list.includes(s)) list.unshift(s);
+  if(!list.some(p=>p.text===s)) list.unshift({ text:s, question:q });
   saveCustomPuzzles(list);
   renderMenu();
 
-  const link = location.origin + location.pathname + "#p=" + b64EncodeUnicode(s);
+  const link = location.origin + location.pathname + "#p=" + encodePayload(s, q);
   document.getElementById('share-link').value = link;
   box.classList.add('show');
   const lbl = box.querySelector('.lbl');
@@ -536,6 +597,7 @@ function createCustomPuzzle(){
     ? "✓ החידה נוצרה. שימו לב: הקישור הזה יעבוד רק אצלכם כרגע (הקובץ נפתח מהמחשב) — לאחר שתעלו ל-GitHub Pages, אותו קישור בדיוק ישלח כל אחד ישר לחידה הזו:"
     : "✓ החידה נוצרה. שלחו את הקישור הזה כדי שאחרים ישחקו בדיוק במשפט שלכם:";
   ta.value = "";
+  qa.value = "";
 }
 
 function copyShareLink(){
@@ -555,29 +617,32 @@ function goMenu(){
 
 /* ================= GAME STATE ================= */
 let currentSentence = "";
+let currentQuestion = "";
 let hintsUsed = 0;
 let dragCtx = null;
 let selectedTile = null;
 
-function startGame(sentence){
-  currentSentence = sentence;
+function startGame(puzzle){
+  currentSentence = puzzle.text;
+  currentQuestion = puzzle.question || "";
   hintsUsed = 0;
   selectedTile = null;
-  buildBoard(sentence);
+  buildBoard(currentSentence);
   document.getElementById('screen-menu').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
   document.getElementById('btn-back').style.display = "inline-block";
   document.getElementById('win-banner').classList.remove('show');
+  document.getElementById('win-reflect').classList.remove('show');
   updateHintCounter();
   window.scrollTo(0,0);
 }
 
 function resetBoard(){
-  startGame(currentSentence);
+  startGame({ text: currentSentence, question: currentQuestion });
 }
 
 function shareCurrentPuzzle(){
-  const link = location.origin + location.pathname + "#p=" + b64EncodeUnicode(currentSentence);
+  const link = location.origin + location.pathname + "#p=" + encodePayload(currentSentence, currentQuestion);
   navigator.clipboard?.writeText(link).then(()=>{
     flashToolbarMsg(IS_LOCAL_FILE ? "הועתק (יעבוד רק אחרי העלאה ל-GitHub Pages)" : "קישור הועתק ✓");
   }).catch(()=>{
@@ -628,6 +693,8 @@ function buildBoard(sentence){
     tile.style.animationDelay = (i*0.02)+"s";
     bank.appendChild(tile);
   });
+
+  updateBoxStates();
 }
 
 function makeTile(ch){
@@ -689,22 +756,35 @@ function onTileUp(e){
     tile.style.width=""; tile.style.height="";
     const dropEl = document.elementFromPoint(e.clientX, e.clientY);
     const box = dropEl ? dropEl.closest('.box') : null;
+    const droppedOnBank = dropEl ? dropEl.closest('#bank') : null;
     if(box && !box.querySelector('.tile')){
       placeTile(tile, box);
+    } else if(droppedOnBank){
+      document.getElementById('bank').appendChild(tile);
+      updateBoxStates();
     } else {
       // snap back
       if(originNext) originParent.insertBefore(tile, originNext);
       else originParent.appendChild(tile);
     }
   } else {
-    // tap: toggle selection
-    if(selectedTile === tile){
+    // tap (no real drag)
+    if(tile.parentElement && tile.parentElement.classList.contains('box')){
+      // tile was already placed in a box: single tap sends it straight back to the pool
+      document.getElementById('bank').appendChild(tile);
       tile.classList.remove('selected');
-      selectedTile = null;
+      if(selectedTile === tile) selectedTile = null;
+      updateBoxStates();
     } else {
-      if(selectedTile) selectedTile.classList.remove('selected');
-      tile.classList.add('selected');
-      selectedTile = tile;
+      // tile is in the bank: toggle selection for tap-to-place
+      if(selectedTile === tile){
+        tile.classList.remove('selected');
+        selectedTile = null;
+      } else {
+        if(selectedTile) selectedTile.classList.remove('selected');
+        tile.classList.add('selected');
+        selectedTile = tile;
+      }
     }
   }
   dragCtx = null;
@@ -754,6 +834,10 @@ function updateBoxStates(){
       }
     }
   });
+  const status = document.getElementById('progress-status');
+  if(status){
+    status.innerHTML = `<b>${filledCorrect}</b> מתוך ${boxes.length} אותיות במקום הנכון`;
+  }
   if(filledCorrect === boxes.length){
     onWin();
   }
@@ -763,6 +847,14 @@ function onWin(){
   document.getElementById('win-sentence').textContent = currentSentence;
   const banner = document.getElementById('win-banner');
   banner.classList.add('show');
+
+  const reflect = document.getElementById('win-reflect');
+  if(currentQuestion){
+    document.getElementById('win-reflect-q').textContent = currentQuestion;
+    reflect.classList.add('show');
+  } else {
+    reflect.classList.remove('show');
+  }
 
   const board = document.getElementById('board');
   board.classList.remove('solved');
@@ -805,11 +897,12 @@ function findTileForChar(ch, excludeBox){
 
 function giveHint(){
   const boxes = [...document.querySelectorAll('.box')];
-  const target = boxes.find(b=>{
+  const eligible = boxes.filter(b=>{
     const t = b.querySelector('.tile');
     return !t || t.dataset.char !== b.dataset.char;
   });
-  if(!target) return;
+  if(!eligible.length) return;
+  const target = eligible[Math.floor(Math.random()*eligible.length)];
 
   const wrongTile = target.querySelector('.tile');
   if(wrongTile){
@@ -834,9 +927,9 @@ function checkHashForSharedPuzzle(){
   const hash = location.hash;
   if(hash.startsWith('#p=')){
     try{
-      const s = b64DecodeUnicode(hash.slice(3));
-      if(isValidSentence(s)){
-        startGame(s);
+      const puzzle = decodePayload(hash.slice(3));
+      if(isValidSentence(puzzle.text)){
+        startGame(puzzle);
         return true;
       }
     }catch(e){ /* fall through to menu */ }
